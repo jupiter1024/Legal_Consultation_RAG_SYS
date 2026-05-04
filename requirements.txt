@@ -1,0 +1,14 @@
+pypdf
+motor
+pymongo
+fastapi
+torch
+sentence-transformers
+tqdm
+langchain-groq
+langchain-community
+langchain
+python-multipart
+uvicorn
+python-dotenv
+certifi
