@@ -171,7 +171,7 @@ Runs the full RAG pipeline. `provider` and `model` are optional — if omitted t
 **Request `application/json`**
 ```json
 {
-  "message":  "How do I find files modified in the last 24 hours?",
+  "message":  "How do I change file permissions?",
   "provider": "groq",
   "model":    "llama-3.1-8b-instant"
 }
@@ -186,13 +186,13 @@ Runs the full RAG pipeline. `provider` and `model` are optional — if omitted t
 **Response `200 OK`**
 ```json
 {
-  "answer": "## Finding Recently Modified Files\n\nUse the `find` command with `-mtime`:\n\n```bash\nfind /path/to/search -mtime -1\n```\n\n- `-mtime -1` matches files modified **less than 1 day** ago. [Source: linux_commands_bible.pdf, p.87]\n- Add `-type f` to restrict to regular files only.\n\n💡 **Pro Tip**: Pipe to `ls -lh` for a human-readable size listing.",
+  "answer": "## Changing File Permissions\n\nTo change file permissions in Linux, use the `chmod` command. Permissions are defined for the owner, the group, and others.\n\n```bash\nchmod 755 filename\n```\n\n- `7` (rwx): Owner can read, write, and execute.\n- `5` (r-x): Group and others can read and execute. [Source: thelinuxcommandline.pdf, p.94]\n\n💡 **Pro Tip**: Use `chmod +x script.sh` to quickly make a script executable without calculating octal values.",
   "sources": [
     {
-      "source":       "linux_commands_bible.pdf",
-      "page":         87,
-      "text_snippet": "The find command traverses a directory tree. The -mtime flag accepts numeric arguments...",
-      "rerank_score": 9.4123
+      "source":       "thelinuxcommandline.pdf",
+      "page":         94,
+      "text_snippet": "chmod — Change file mode. The chmod command is used to change the permissions of a file or directory. It supports both octal and symbolic modes...",
+      "rerank_score": 0.8942
     }
   ],
   "provider": "groq",
@@ -369,7 +369,7 @@ curl http://localhost:8001/llm/providers
 # Test a chat query against the real books
 curl -X POST http://localhost:8001/chat \
   -H "Content-Type: application/json" \
-  -d '{"message":"How do I use the ls command?","provider":"groq","model":"llama-3.1-8b-instant"}'
+  -d '{"message":"What is the difference between a hard link and a symbolic link?","provider":"groq","model":"llama-3.1-8b-instant"}'
 ```
 
 ### Force Full Re-index
@@ -380,3 +380,30 @@ docker-compose exec api python -m scripts.ingest --force
 ```
 
 > **Persistence note:** `./Data` is bind-mounted as a Docker volume (`./Data:/app/Data` in `docker-compose.yml`). The FAISS index survives `docker-compose down` and container rebuilds — ingestion only needs to run once per PDF.
+
+---
+
+## Retrieval Accuracy & Hallucination Analysis
+
+RAG systems are prone to hallucination and poor retrieval. Below is an evaluation of LinuxGPT's retrieval performance based on 3 edge-case queries where the system's architecture reached its limits.
+
+### Edge Case 1: Negative Constraints
+**Query:** *"Show me how to list files WITHOUT using the ls command."*
+
+*   **Failure Mode:** Poor Retrieval (Semantic Noise).
+*   **Result:** The system retrieved chunks heavily describing the `ls` command and its flags. The LLM then attempted to explain `ls` despite the "WITHOUT" constraint.
+*   **Architectural Reason:** The embedding model (`all-MiniLM-L6-v2`) is a bi-encoder that maps "list files" to a vector space dominated by `ls`. It lacks the logical reasoning to penalize terms like "WITHOUT" or "NOT" effectively. The re-ranker also prioritized "list files" similarity over the negative instruction.
+
+### Edge Case 2: Broad Synthesis (Global Context)
+**Query:** *"Summarize all security-related commands mentioned in the documentation."*
+
+*   **Failure Mode:** Incomplete Information Retrieval.
+*   **Result:** The system retrieved the Table of Contents pages and a single chapter introduction on file permissions (chmod/chown), missing security topics like `ssh`, `iptables`, or `sudo` mentioned elsewhere.
+*   **Architectural Reason:** The system uses a fixed `RERANK_TOP_K = 5`. Five chunks (approx. 5000 characters) are insufficient to capture information scattered across 600+ pages of documentation. Without a hierarchical retrieval strategy or an agentic "map-reduce" approach, broad summaries will always be lossy.
+
+### Edge Case 3: Complex Multi-Flag Coordination
+**Query:** *"How do I find empty files modified exactly 3 days ago only in the current directory?"*
+
+*   **Failure Mode:** Partial Context Retrieval.
+*   **Result:** The system retrieved chunks for the `find` command, but the specific flags `-empty`, `-mtime 3`, and `-maxdepth 1` were spread across different sections of the manual. The retriever found a chunk for `-mtime` but missed the one explaining `-maxdepth`.
+*   **Architectural Reason:** The `chunk_size` of 1000 characters often splits a long manual page (like `find`) into 10+ chunks. Since retrieval is independent, the system might not "see" all required flags if they aren't co-located in the top 5 chunks. A larger chunk size or "context stitching" would be required to solve this.
