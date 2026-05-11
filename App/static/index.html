@@ -3,70 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LexAI | Premium Legal RAG Bot</title>
+    <title>LinuxGPT — AI Documentation Assistant</title>
+    <meta name="description" content="LinuxGPT: Ask questions about Linux commands and documentation. Powered by RAG with FAISS retrieval and LLaMA 3.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Markdown + Code Highlight -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+
+        <!-- ── Sidebar ──────────────────────────────────────────────────── -->
         <aside class="sidebar">
+            <!-- Logo -->
             <div class="logo">
-                <i class="fas fa-balance-scale"></i>
-                <span>LexAI</span>
-            </div>
-            
-            <div class="upload-section">
-                <h3>Documents</h3>
-                <label for="file-upload" class="upload-btn">
-                    <i class="fas fa-plus"></i> Upload PDF
-                </label>
-                <input type="file" id="file-upload" accept=".pdf" hidden>
-                <div id="upload-status" class="status-indicator"></div>
+                <div class="logo-icon">
+                    <span class="prompt-symbol">$</span>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-name">LinuxGPT</span>
+                    <span class="logo-sub">Documentation AI</span>
+                </div>
             </div>
 
-            <div class="footer-info">
-                <p>Legal Assistant AI v1.0</p>
-                <p>Powered by Llama 3.1 & Groq</p>
+            <!-- Model Selector -->
+            <div class="section-label">
+                <i class="fas fa-microchip"></i> LLM Engine
+            </div>
+            <div class="model-selector-group">
+                <select id="provider-select" class="select-input" title="Select LLM Provider">
+                    <option value="">Loading providers...</option>
+                </select>
+                <select id="model-select" class="select-input" title="Select Model">
+                    <option value="">Select model...</option>
+                </select>
+            </div>
+            <div class="model-badge" id="model-badge">
+                <span class="pulse-dot"></span>
+                <span id="badge-text">Connecting...</span>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Upload -->
+            <div class="section-label">
+                <i class="fas fa-book"></i> Knowledge Base
+            </div>
+            <label for="file-upload" class="upload-btn" id="upload-label">
+                <i class="fas fa-file-arrow-up"></i>
+                <span>Upload Linux PDF</span>
+            </label>
+            <input type="file" id="file-upload" accept=".pdf" hidden>
+            <div id="upload-status" class="upload-status"></div>
+
+            <div class="divider"></div>
+
+            <!-- Quick Commands -->
+            <div class="section-label">
+                <i class="fas fa-terminal"></i> Quick Queries
+            </div>
+            <div class="quick-cmds">
+                <button class="quick-btn" data-query="How do I list all files including hidden ones?">
+                    <code>ls -la</code> List files
+                </button>
+                <button class="quick-btn" data-query="How do I find a file by name recursively?">
+                    <code>find</code> Find files
+                </button>
+                <button class="quick-btn" data-query="How do I view running processes?">
+                    <code>ps aux</code> Processes
+                </button>
+                <button class="quick-btn" data-query="How do I change file permissions?">
+                    <code>chmod</code> Permissions
+                </button>
+            </div>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                <div class="footer-row"><i class="fas fa-brain"></i> FAISS · SentenceTransformer</div>
+                <div class="footer-row"><i class="fas fa-filter"></i> Cross-Encoder Re-ranking</div>
+                <div class="footer-row"><i class="fab fa-python"></i> FastAPI · LangChain</div>
             </div>
         </aside>
 
-        <!-- Main Chat Area -->
+        <!-- ── Main Chat Area ────────────────────────────────────────────── -->
         <main class="chat-area">
+
+            <!-- Header -->
             <header class="chat-header">
-                <h2>Legal Consultation</h2>
-                <div class="connection-status">
-                    <span class="pulse"></span> Online
+                <div class="header-left">
+                    <h1 class="header-title">
+                        <span class="terminal-prompt">~</span>
+                        Linux Documentation Assistant
+                        <span class="cursor-blink">▋</span>
+                    </h1>
+                    <p class="header-sub">Ask anything about Linux commands, flags, and system administration</p>
+                </div>
+                <div class="header-right">
+                    <div class="status-pill" id="status-pill">
+                        <span class="status-dot"></span>
+                        <span id="status-text">Online</span>
+                    </div>
                 </div>
             </header>
 
+            <!-- Chat Window -->
             <div id="chat-window" class="chat-window">
-                <!-- Welcome Message -->
-                <div class="message bot">
-                    <div class="message-content">
-                        Hello! I am your legal assistant. Upload a PDF document to begin, or ask me questions about your existing database.
-                    </div>
-                </div>
+                <!-- Welcome message injected by JS -->
             </div>
 
+            <!-- Input Area -->
             <div class="input-area">
-                <div class="input-container">
-                    <input type="text" id="user-input" placeholder="Ask a legal question..." autocomplete="off">
-                    <button id="send-btn">
+                <div class="input-container" id="input-container">
+                    <span class="input-prompt">$</span>
+                    <textarea
+                        id="user-input"
+                        class="user-input"
+                        placeholder="Ask a Linux question... (Enter to send, Shift+Enter for newline)"
+                        rows="1"
+                        autocomplete="off"
+                        spellcheck="false"
+                    ></textarea>
+                    <button id="send-btn" title="Send (Enter)">
                         <i class="fas fa-paper-plane"></i>
                     </button>
+                </div>
+                <div class="input-hint">
+                    Powered by RAG · <span id="active-model-hint">Loading...</span>
                 </div>
             </div>
         </main>
     </div>
 
     <!-- Source Modal -->
-    <div id="source-modal" class="modal">
+    <div id="source-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h3>Source Citations</h3>
-            <div id="modal-body"></div>
+            <div class="modal-header">
+                <h2 id="modal-title"><i class="fas fa-book-open"></i> Source Citations</h2>
+                <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
         </div>
     </div>
 
