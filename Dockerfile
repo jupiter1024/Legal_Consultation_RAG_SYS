@@ -34,7 +34,7 @@ COPY scripts/ ./scripts/
 COPY .env.example ./.env.example
 
 # Create data directories (will be mounted as volumes in production)
-RUN mkdir -p data/pdfs data/processed_chunks data/vector_store
+RUN mkdir -p Data/PDFS Data/Processed_Chunks Data/VectorStore
 
 # Expose API port
 EXPOSE 8001
